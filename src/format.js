@@ -4,6 +4,15 @@ function minutesToTime(m) {
   return `${hours}:${mins}`;
 }
 
+function formatDuration(startMin, endMin) {
+  const diff = endMin - startMin;
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m}m`;
+}
+
 function slotTypeLabel(type) {
   if (type === 'Definite') return 'OFF';
   if (type === 'NotPlanned') return '--';
@@ -15,8 +24,43 @@ function formatDay(dayData) {
   if (dayData.status === 'WaitingForSchedule') return '  Waiting for schedule...';
 
   return dayData.slots
-    .map(s => `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)}`)
+    .map(s => {
+      const dur = formatDuration(s.start, s.end);
+      return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} (${dur})`;
+    })
     .join('\n');
+}
+
+function findNextOff(groupData) {
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  if (groupData.today?.status === 'ScheduleApplies') {
+    for (const s of groupData.today.slots) {
+      if (s.type === 'Definite' && s.start > nowMinutes) {
+        return { day: 'today', minutesUntil: s.start - nowMinutes };
+      }
+    }
+  }
+
+  if (groupData.tomorrow?.status === 'ScheduleApplies') {
+    for (const s of groupData.tomorrow.slots) {
+      if (s.type === 'Definite') {
+        const minutesUntil = (1440 - nowMinutes) + s.start;
+        return { day: 'tomorrow', minutesUntil };
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatTimeUntil(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}min`;
 }
 
 function formatDate(isoString) {
@@ -48,6 +92,11 @@ function formatSchedule(group, groupData) {
     `Tomorrow${tomorrowDate}:`,
     formatDay(groupData.tomorrow),
   ];
+
+  const nextOff = findNextOff(groupData);
+  if (nextOff) {
+    lines.push('', `Going off in ${formatTimeUntil(nextOff.minutesUntil)}`);
+  }
 
   if (groupData.updatedOn) {
     lines.push('', `Updated: ${formatUpdatedOn(groupData.updatedOn)}`);
