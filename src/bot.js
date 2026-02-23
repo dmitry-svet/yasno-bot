@@ -13,15 +13,25 @@ function startBot() {
 
   const bot = new TelegramBot(token, { polling: true });
 
+  bot.setMyCommands([
+    { command: 'status', description: 'Show current schedule' },
+    { command: 'setgroup', description: 'Choose your blackout group' },
+    { command: 'help', description: 'List commands' },
+  ]);
+
+  const mainKeyboard = {
+    reply_markup: {
+      keyboard: [[{ text: '/status' }, { text: '/setgroup' }]],
+      resize_keyboard: true,
+    },
+  };
+
   bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id,
       'Welcome to Yasno Schedule Bot!\n\n' +
       'I monitor the Yasno electricity blackout schedule and notify you when it changes.\n\n' +
-      'Use /setgroup to pick your group, then I\'ll send you updates automatically.\n\n' +
-      'Commands:\n' +
-      '/setgroup — choose your blackout group\n' +
-      '/status — show current schedule\n' +
-      '/help — list commands'
+      'Use /setgroup to pick your group, then I\'ll send you updates automatically.',
+      mainKeyboard
     );
   });
 
