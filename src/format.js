@@ -1,3 +1,10 @@
+const TZ = 'Europe/Kyiv';
+
+function nowInUA() {
+  const parts = new Date().toLocaleString('en-GB', { timeZone: TZ, hour12: false }).split(/[\s,:\/]+/);
+  return { hours: Number(parts[3]), minutes: Number(parts[4]) };
+}
+
 function minutesToTime(m) {
   const hours = String(Math.floor(m / 60) % 24).padStart(2, '0');
   const mins = String(m % 60).padStart(2, '0');
@@ -26,14 +33,14 @@ function formatDay(dayData) {
   return dayData.slots
     .map(s => {
       const dur = formatDuration(s.start, s.end);
-      return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} (${dur})`;
+      return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} ${dur}`;
     })
     .join('\n');
 }
 
 function findNextOff(groupData) {
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const ua = nowInUA();
+  const nowMinutes = ua.hours * 60 + ua.minutes;
 
   if (groupData.today?.status === 'ScheduleApplies') {
     for (const s of groupData.today.slots) {
@@ -65,18 +72,14 @@ function formatTimeUntil(minutes) {
 
 function formatDate(isoString) {
   const d = new Date(isoString);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.toLocaleString('en-GB', { timeZone: TZ, day: '2-digit' }));
+  const month = String(d.toLocaleString('en-GB', { timeZone: TZ, month: '2-digit' }));
   return `${day}.${month}`;
 }
 
 function formatUpdatedOn(isoString) {
   const d = new Date(isoString);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const mins = String(d.getMinutes()).padStart(2, '0');
-  return `${day}.${month} ${hours}:${mins}`;
+  return d.toLocaleString('en-GB', { timeZone: TZ, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '').replace(/\//g, '.');
 }
 
 function formatSchedule(group, groupData) {
