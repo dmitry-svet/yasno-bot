@@ -26,9 +26,9 @@ async function checkForUpdates(bot) {
   for (const [chatId, user] of Object.entries(users)) {
     if (!changes[user.group]) continue;
 
-    const message = formatChangeNotification(user.group, newData[user.group]);
+    const message = formatChangeNotification(user.group, newData[user.group], changes[user.group]);
     try {
-      await bot.sendMessage(chatId, message);
+      await bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
     } catch (err) {
       if (err.response?.statusCode === 403) {
         console.log(`User ${chatId} blocked the bot, removing`);
@@ -41,7 +41,7 @@ async function checkForUpdates(bot) {
 }
 
 function startCron(bot) {
-  const schedule = process.env.CRON_SCHEDULE || '*/30 * * * *';
+  const schedule = process.env.CRON_SCHEDULE || '*/15 * * * *';
 
   cron.schedule(schedule, () => {
     checkForUpdates(bot).catch(err => console.error('Cron error:', err));

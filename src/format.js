@@ -26,16 +26,17 @@ function slotTypeLabel(type) {
   return 'possibly off';
 }
 
-function formatDay(dayData) {
+function formatSlot(s) {
+  const dur = formatDuration(s.start, s.end);
+  return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} ${dur}`;
+}
+
+function formatDay(dayData, { bold = false } = {}) {
   if (!dayData) return '  No data';
   if (dayData.status === 'WaitingForSchedule') return '  Waiting for schedule...';
 
-  return dayData.slots
-    .map(s => {
-      const dur = formatDuration(s.start, s.end);
-      return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} ${dur}`;
-    })
-    .join('\n');
+  const lines = dayData.slots.map(s => formatSlot(s)).join('\n');
+  return bold ? `<b>${lines}</b>` : lines;
 }
 
 function findNextOff(groupData) {
@@ -82,7 +83,7 @@ function formatUpdatedOn(isoString) {
   return d.toLocaleString('en-GB', { timeZone: TZ, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '').replace(/\//g, '.');
 }
 
-function formatSchedule(group, groupData) {
+function formatSchedule(group, groupData, changes) {
   const todayDate = groupData.today?.date ? ` (${formatDate(groupData.today.date)})` : '';
   const tomorrowDate = groupData.tomorrow?.date ? ` (${formatDate(groupData.tomorrow.date)})` : '';
 
@@ -90,10 +91,10 @@ function formatSchedule(group, groupData) {
     `Group ${group} — Schedule`,
     '',
     `Today${todayDate}:`,
-    formatDay(groupData.today),
+    formatDay(groupData.today, { bold: !!changes?.today }),
     '',
     `Tomorrow${tomorrowDate}:`,
-    formatDay(groupData.tomorrow),
+    formatDay(groupData.tomorrow, { bold: !!changes?.tomorrow }),
   ];
 
   const nextOff = findNextOff(groupData);
@@ -108,8 +109,8 @@ function formatSchedule(group, groupData) {
   return lines.join('\n');
 }
 
-function formatChangeNotification(group, groupData) {
-  return `Schedule changed for group ${group}!\n\n${formatSchedule(group, groupData)}`;
+function formatChangeNotification(group, groupData, changes) {
+  return `Schedule changed for group ${group}!\n\n${formatSchedule(group, groupData, changes)}`;
 }
 
 module.exports = { formatSchedule, formatChangeNotification };
