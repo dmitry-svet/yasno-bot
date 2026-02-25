@@ -26,7 +26,7 @@ async function checkForUpdates(bot) {
   for (const [chatId, user] of Object.entries(users)) {
     if (!changes[user.group]) continue;
 
-    const message = formatChangeNotification(user.group, newData[user.group], changes[user.group]);
+    const message = formatChangeNotification(user.group, newData[user.group], oldData?.[user.group]);
     try {
       await bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
     } catch (err) {

@@ -31,12 +31,23 @@ function formatSlot(s) {
   return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} ${dur}`;
 }
 
-function formatDay(dayData, { bold = false } = {}) {
+function slotChanged(slot, oldSlots) {
+  if (!oldSlots) return true;
+  const match = oldSlots.find(o => o.start === slot.start && o.end === slot.end);
+  if (!match) return true;
+  return match.type !== slot.type;
+}
+
+function formatDay(dayData, { oldDayData } = {}) {
   if (!dayData) return '  No data';
   if (dayData.status === 'WaitingForSchedule') return '  Waiting for schedule...';
 
-  const lines = dayData.slots.map(s => formatSlot(s)).join('\n');
-  return bold ? `<b>${lines}</b>` : lines;
+  return dayData.slots
+    .map(s => {
+      const line = formatSlot(s);
+      return oldDayData && slotChanged(s, oldDayData.slots) ? `<b>${line}</b>` : line;
+    })
+    .join('\n');
 }
 
 function findNextOff(groupData) {
@@ -83,7 +94,7 @@ function formatUpdatedOn(isoString) {
   return d.toLocaleString('en-GB', { timeZone: TZ, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '').replace(/\//g, '.');
 }
 
-function formatSchedule(group, groupData, changes) {
+function formatSchedule(group, groupData, oldGroupData) {
   const todayDate = groupData.today?.date ? ` (${formatDate(groupData.today.date)})` : '';
   const tomorrowDate = groupData.tomorrow?.date ? ` (${formatDate(groupData.tomorrow.date)})` : '';
 
@@ -91,10 +102,10 @@ function formatSchedule(group, groupData, changes) {
     `Group ${group} — Schedule`,
     '',
     `Today${todayDate}:`,
-    formatDay(groupData.today, { bold: !!changes?.today }),
+    formatDay(groupData.today, { oldDayData: oldGroupData?.today }),
     '',
     `Tomorrow${tomorrowDate}:`,
-    formatDay(groupData.tomorrow, { bold: !!changes?.tomorrow }),
+    formatDay(groupData.tomorrow, { oldDayData: oldGroupData?.tomorrow }),
   ];
 
   const nextOff = findNextOff(groupData);
@@ -109,8 +120,8 @@ function formatSchedule(group, groupData, changes) {
   return lines.join('\n');
 }
 
-function formatChangeNotification(group, groupData, changes) {
-  return `Schedule changed for group ${group}!\n\n${formatSchedule(group, groupData, changes)}`;
+function formatChangeNotification(group, groupData, oldGroupData) {
+  return `Schedule changed for group ${group}!\n\n${formatSchedule(group, groupData, oldGroupData)}`;
 }
 
 module.exports = { formatSchedule, formatChangeNotification };
