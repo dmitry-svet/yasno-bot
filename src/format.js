@@ -6,7 +6,7 @@ function nowInUA() {
 }
 
 function minutesToTime(m) {
-  const hours = String(Math.floor(m / 60) % 24).padStart(2, '0');
+  const hours = Math.floor(m / 60) % 24;
   const mins = String(m % 60).padStart(2, '0');
   return `${hours}:${mins}`;
 }
@@ -15,20 +15,16 @@ function formatDuration(startMin, endMin) {
   const diff = endMin - startMin;
   const h = Math.floor(diff / 60);
   const m = diff % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h${m}m`;
-}
-
-function slotTypeLabel(type) {
-  if (type === 'Definite') return 'OFF';
-  if (type === 'NotPlanned') return '--';
-  return 'possibly off';
+  if (h === 0) return `${m}хв`;
+  if (m === 0) return `${h}г`;
+  return `${h}г ${m}хв`;
 }
 
 function formatSlot(s) {
+  const prefix = s.type === 'Definite' ? 'off' : '   ';
+  const time = `${minutesToTime(s.start)} – ${minutesToTime(s.end)}`;
   const dur = formatDuration(s.start, s.end);
-  return `  ${minutesToTime(s.start)}-${minutesToTime(s.end)}  ${slotTypeLabel(s.type)} ${dur}`;
+  return `${prefix}  ${time.padEnd(14)} ${dur}`;
 }
 
 function slotChanged(slot, oldSlots) {
@@ -42,12 +38,12 @@ function formatDay(dayData, { oldDayData } = {}) {
   if (!dayData) return '  No data';
   if (dayData.status === 'WaitingForSchedule') return '  Waiting for schedule...';
 
-  return dayData.slots
-    .map(s => {
-      const line = formatSlot(s);
-      return oldDayData && slotChanged(s, oldDayData.slots) ? `<b>${line}</b>` : line;
-    })
-    .join('\n');
+  const lines = dayData.slots.map(s => {
+    const line = formatSlot(s);
+    return oldDayData && slotChanged(s, oldDayData.slots) ? `<b>${line}</b>` : line;
+  });
+
+  return `<pre>${lines.join('\n')}</pre>`;
 }
 
 function findNextOff(groupData) {

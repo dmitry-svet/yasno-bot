@@ -70,7 +70,7 @@ function startBot() {
 
     const stored = getSchedule();
     if (stored?.data?.[group]) {
-      bot.sendMessage(chatId, formatSchedule(group, stored.data[group]));
+      bot.sendMessage(chatId, formatSchedule(group, stored.data[group]), { parse_mode: 'HTML' });
     }
   });
 
@@ -90,7 +90,7 @@ function startBot() {
       return;
     }
 
-    bot.sendMessage(chatId, formatSchedule(user.group, stored.data[user.group]));
+    bot.sendMessage(chatId, formatSchedule(user.group, stored.data[user.group]), { parse_mode: 'HTML' });
   });
 
   console.log('Bot started in polling mode');
